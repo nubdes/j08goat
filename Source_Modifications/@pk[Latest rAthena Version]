@@ -1,0 +1,59 @@
+// Latest Modified @pk patch. 2018
+// j08goat@gmail.com
+
+// ---------------------------------------------------------------------
+// atcommand.cpp
+// you can add this somewhere or above the (monsterignore)
+/*
+ * @pk command : modified by jong
+ * j08goat@gmail.com
+ */
+int atcommand_pkmode( const int fd, struct map_session_data *sd, const char *command, const char *message ) {
+ 
+	nullpo_retr(-1, sd);
+
+	if( map_getmapflag(sd->bl.m, MF_PVP) || map_getmapflag(sd->bl.m, MF_GVG) || map_getmapflag(sd->bl.m, MF_GVG_CASTLE) ) {
+  		clif_displaymessage(fd, "You can only change your PK state on non-PVP maps.");
+  		return -1;
+		}
+	if (!sd->state.pk_mode) {
+		sd->state.pk_mode = 1;
+		clif_displaymessage(sd->fd, "You are now no longer in PK mode.");
+	} else {
+		sd->state.pk_mode = 0;
+		clif_displaymessage(sd->fd, "Returned to normal state.");
+	}
+	return 0;
+}
+
+// atcommand.cpp
+find: ACMD_DEF(monsterignore),
+below add: ACMD_DEF2("pk",pkmode),
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// battle.cpp
+find: 
+				return 0; // Global immunity only to Attacks
+
+below add:
+			if( mapdata->flag[MF_PVP] && sd->state.pk_mode && flag&BCT_ENEMY && s_bl->type != BL_MOB )
+				return 0; // [@pk patch]
+
+find:
+						return 0; // You can't target anything out of your duel
+below add:
+					else if( mapdata->flag[MF_PVP] && sd->state.pk_mode && t_bl->type != BL_MOB )
+						return 0;
+// ---------------------------------------------------------------------
+
+// ---------------------------------------------------------------------
+// pc.hpp
+find: 
+			unsigned int warping : 1;
+below add:
+			unsigned int pk_mode : 1;
+// ---------------------------------------------------------------------
+
+
+recompile and restart the server.
